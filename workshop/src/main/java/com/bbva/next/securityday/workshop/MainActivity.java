@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -16,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.bbva.next.securityday.workshop.controller.LoginViewModel;
 import com.bbva.next.securityday.workshop.controller.Step1;
 import com.bbva.next.securityday.workshop.controller.Step2;
 import com.bbva.next.securityday.workshop.controller.Step3;
@@ -33,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     final Step1 step1 = new Step1();
     final Step2 step2 = new Step2();
     final Step3 step3 = new Step3();
+    final LoginViewModel viewModel = new LoginViewModel(this);
 
     Toast toast;
     Button recordAudioButton;
@@ -47,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     EditText loginEditText;
     Button loginButton;
     Button logoutButton;
+    Switch debugSwitch;
 
     // TODO: refactor this
     byte[] bytesRecorded = null;
@@ -59,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
         prepareStep1();
         prepareStep2();
         prepareStep3();
+        prepareLogin();
     }
 
     private void bindViews() {
@@ -75,6 +80,15 @@ public class MainActivity extends AppCompatActivity {
         loginEditText = findViewById(R.id.et_login);
         loginButton = findViewById(R.id.bt_login);
         logoutButton = findViewById(R.id.bt_logout);
+        debugSwitch = findViewById(R.id.sw_debug);
+
+        debugSwitch.setOnCheckedChangeListener((v, checked) -> {
+            int visibility = checked ? View.VISIBLE : View.GONE;
+            findViewById(R.id.ll_step1).setVisibility(visibility);
+            findViewById(R.id.ll_step2).setVisibility(visibility);
+            findViewById(R.id.ll_step3).setVisibility(visibility);
+        });
+        debugSwitch.performClick();
     }
 
     private void prepareStep1() {
@@ -194,6 +208,68 @@ public class MainActivity extends AppCompatActivity {
                                 onFailure),
                         onFailure),
                 onFailure);
+    }
+
+    private void prepareLogin() {
+
+        loginButton.setOnClickListener(v -> {
+
+            if (missingRequiredPermissions()) {
+                return;
+            }
+
+            final AlertDialog dialog = new AlertDialog.Builder(this)
+                    .setTitle("Autenticando")
+                    .setMessage("Por favor, espere")
+                    .setCancelable(false)
+                    .setNegativeButton("Cerrar", (di, i) -> {
+                        di.cancel();
+                    })
+                    .create();
+
+            dialog.show();
+            dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setVisibility(View.GONE);
+
+            viewModel.login(loginEditText.getText().toString(),
+                    event -> {
+                switch (event) {
+                    case REGISTRATION:
+                        dialog.setTitle("⏳ Grabando audio del registro");
+                        break;
+                    case AUTHENTICATION:
+                        dialog.setTitle("⏳ Grabando audio de la autenticación");
+                        break;
+                    case AUTHENTICATING:
+                        dialog.setTitle("⏳ Autenticando...");
+                        dialog.setMessage("Por favor, espere");
+                        break;
+                }
+                    },
+                    secondsLeft -> dialog.setMessage("Siga hablando hasta que el contador llegue a cero\n\nQuedan " + secondsLeft + "s"),
+                    success -> {
+                        dialog.setTitle("✅ Autenticado");
+                        dialog.setMessage("Ya puedes usar tu asistente virtual favorito!");
+                        dialog.setCancelable(true);
+                        dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setVisibility(View.VISIBLE);
+                    },
+                    error -> {
+                        dialog.setTitle("❌ Error");
+                        dialog.setMessage(error.getMessage());
+                        dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setVisibility(View.GONE);
+                        dialog.setCancelable(true);
+                    });
+        });
+
+        logoutButton.setOnClickListener(v -> {
+
+            viewModel.logout(loginEditText.getText().toString(),
+                    success -> {
+                        showAlert("✅", "Se ha cerrado la sesión");
+                    },
+                    error -> {
+                        showAlert("❌ Error", error.getMessage());
+                    });
+        });
     }
 
     private boolean missingRequiredPermissions() {

@@ -18,6 +18,14 @@
             android:layout_margin="16dp"
             android:orientation="vertical">
 
+            <Switch
+                android:id="@+id/sw_debug"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right"
+                android:checked="true"
+                android:text="Debug" />
+
             <LinearLayout
                 android:id="@+id/ll_step1"
                 android:layout_width="match_parent"
@@ -207,8 +215,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="32dp"
-                android:orientation="vertical"
-                android:visibility="gone">
+                android:orientation="vertical">
 
                 <ImageView
                     android:layout_width="match_parent"
@@ -228,9 +235,9 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
                     android:layout_marginStart="16dp"
                     android:layout_marginLeft="16dp"
-                    android:layout_marginTop="32dp"
                     android:text="Email" />
 
                 <EditText
