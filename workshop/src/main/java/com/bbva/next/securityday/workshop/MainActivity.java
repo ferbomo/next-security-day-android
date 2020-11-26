@@ -5,7 +5,6 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -182,8 +181,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void prepareStep3() {
 
-        // TODO: Open Smart Assistant
-        Log.d("MainActivity", "⚠️ TODO: Open Smart Assistant");
+        launchGalaButton.setOnClickListener(v -> step3.openGala(this));
     }
 
     private void doFullStep1(final String filename, final Callable<Void> onSuccess, final Callable<Throwable> onFailure) {
