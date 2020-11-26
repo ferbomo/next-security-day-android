@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -18,6 +19,7 @@ import androidx.core.content.ContextCompat;
 
 import com.bbva.next.securityday.workshop.controller.Step1;
 import com.bbva.next.securityday.workshop.controller.Step2;
+import com.bbva.next.securityday.workshop.controller.Step3;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
     final Step1 step1 = new Step1();
     final Step2 step2 = new Step2();
+    final Step3 step3 = new Step3();
 
     Toast toast;
     Button recordAudioButton;
@@ -56,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
         bindViews();
         prepareStep1();
         prepareStep2();
+        prepareStep3();
     }
 
     private void bindViews() {
@@ -174,6 +178,12 @@ public class MainActivity extends AppCompatActivity {
                     ok -> showToast("✅ Email " + email + " eliminado"),
                     error -> showAlert("❌ Error", error.getMessage()));
         });
+    }
+
+    private void prepareStep3() {
+
+        // TODO: Open Smart Assistant
+        Log.d("MainActivity", "⚠️ TODO: Open Smart Assistant");
     }
 
     private void doFullStep1(final String filename, final Callable<Void> onSuccess, final Callable<Throwable> onFailure) {
