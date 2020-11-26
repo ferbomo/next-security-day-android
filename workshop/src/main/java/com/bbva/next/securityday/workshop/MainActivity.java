@@ -1,9 +1,11 @@
 package com.bbva.next.securityday.workshop;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -118,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
                         ok -> showToast("✅ Archivo " + filename + " validado"),
                         error -> showAlert("❌ Error", error.getMessage())));
     }
+
 
     private boolean missingRequiredPermissions() {
 
