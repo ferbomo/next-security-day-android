@@ -1,0 +1,2 @@
+include ':workshop'
+rootProject.name = "Next Security Day"
