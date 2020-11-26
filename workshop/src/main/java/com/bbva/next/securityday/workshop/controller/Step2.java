@@ -3,7 +3,6 @@ package com.bbva.next.securityday.workshop.controller;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.os.HandlerCompat;
@@ -56,9 +55,42 @@ public final class Step2 {
         //        "userId": "<email>"
         //    }
 
-        // TODO: llamar a servicio de consulta de registro
-        Log.d("Step2", "⚠️ TODO: implementar llamada a servicio de registro de usuario");
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        final Handler mainHandler = HandlerCompat.createAsync(Looper.getMainLooper());
 
+        // Run work in a background thread
+        executor.execute(() -> {
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .addInterceptor(loggingInterceptor)
+                    .build();
+
+            try {
+
+                final User user = new User();
+                user.setUserId(email);
+                final Gson gson = new Gson();
+                final String json = gson.toJson(user);
+
+                final RequestBody body = RequestBody.create(json, MediaType.parse(APPLICATION_JSON));
+
+                final Request request = new Request.Builder()
+                        .url(MIDDLEWARE_URL)
+                        .addHeader(CONTENT_TYPE, APPLICATION_JSON)
+                        .addHeader(ACCEPTS, APPLICATION_JSON)
+                        .post(body)
+                        .build();
+
+                final Response response = client.newCall(request).execute();
+                final User registeredUser = gson.fromJson(response.body().string(), User.class);
+
+                // Call back using the main UI thread
+                mainHandler.post(() -> onSuccess.call(registeredUser));
+
+            } catch (Throwable e) {
+                // Call back using the main UI thread
+                mainHandler.post(() -> onFailure.call(e));
+            }
+        });
     }
 
     public void isRegistered(@NonNull final String email,
@@ -83,23 +115,26 @@ public final class Step2 {
 
             try {
 
-                final Gson gson = new Gson();
                 final Request request = new Request.Builder()
-                        .url(MIDDLEWARE_URL+email)
+                        .url(MIDDLEWARE_URL + email)
                         .addHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .addHeader(ACCEPTS, APPLICATION_JSON)
                         .get()
                         .build();
 
                 final Response response = client.newCall(request).execute();
-                final User registeredUser = gson.fromJson(response.body().string(), User.class);
 
-                if (response.code() < 400) {
-                    mainHandler.post(() -> onSuccess.call(null));
-                }
-                else {
-                    mainHandler.post(() -> onFailure.call(new Exception("Status code " + response.code())));
-                }
+                // Call back using the main UI thread
+                mainHandler.post(() -> {
+
+                    if (response.code() < 400) {
+                        onSuccess.call(null);
+                    } else if (response.code() == 404) {
+                        onFailure.call(new Exception("El email " + email + " no está registrado"));
+                    } else {
+                        onFailure.call(new Exception("Error: returned status code is " + response.code()));
+                    }
+                });
 
             } catch (Throwable e) {
                 // Call back using the main UI thread
@@ -177,7 +212,36 @@ public final class Step2 {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         final Handler mainHandler = HandlerCompat.createAsync(Looper.getMainLooper());
 
-        // TODO: Llamar al servicio de borrado de usuario
-        Log.d("Step2", "⚠️ TODO: implementar llamada a servicio de borrado de usuario");
+        // Run work in a background thread
+        executor.execute(() -> {
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .addInterceptor(loggingInterceptor)
+                    .build();
+
+            try {
+                final Request request = new Request.Builder()
+                        .url(MIDDLEWARE_URL + email)
+                        .addHeader(CONTENT_TYPE, APPLICATION_JSON)
+                        .addHeader(ACCEPTS, APPLICATION_JSON)
+                        .delete()
+                        .build();
+
+                final Response response = client.newCall(request).execute();
+
+                // Call back using the main UI thread
+                mainHandler.post(() -> {
+
+                    if (response.code() < 400) {
+                        onSuccess.call(null);
+                    } else {
+                        onFailure.call(new Exception("Error: returned status code is " + response.code()));
+                    }
+                });
+
+            } catch (Throwable e) {
+                // Call back using the main UI thread
+                mainHandler.post(() -> onFailure.call(e));
+            }
+        });
     }
 }

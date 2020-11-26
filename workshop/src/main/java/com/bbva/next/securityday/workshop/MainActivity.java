@@ -5,7 +5,6 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -179,8 +178,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void doFullStep1(final String filename, final Callable<Void> onSuccess, final Callable<Throwable> onFailure) {
         showToast("⏺ Grabando!");
-        // TODO: Llamar a recordAudio, después a saveAudio, y después a validateAudio
-        Log.d("MainActivity", "⚠️ TODO: Llamar a recordAudio, después a saveAudio, y después a validateAudio");
+        step1.recordAudio(this,
+                secondsLeft -> showToast("⏳ " + secondsLeft + " segundos..."),
+                bytesRecorded -> step1.saveAudio(this, bytesRecorded, filename,
+                        saveOk -> step1.validateAudio(this, filename,
+                                validateOk -> onSuccess.call(null),
+                                onFailure),
+                        onFailure),
+                onFailure);
     }
 
     private boolean missingRequiredPermissions() {
