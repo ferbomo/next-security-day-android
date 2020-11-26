@@ -30,6 +30,25 @@ public final class Step1 {
                             @NonNull final Callable<byte[]> onSuccess,
                             @NonNull final Callable<Throwable> onFailure) {
 
+        countdown = new CountDownTimer(RECORD_DURATION_MILLIS, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                onSecondsLeft.call((int) (millisUntilFinished / 1000));
+            }
+
+            @Override
+            public void onFinish() {
+                voiceCapture.stop();
+                countdown = null;
+            }
+        };
+
+        try {
+            countdown.start();
+            voiceCapture.start(context, onSuccess::call);
+        } catch (final Throwable throwable) {
+            onFailure.call(throwable);
+        }
     }
 
     public void saveAudio(@NonNull final Context context,
@@ -59,6 +78,22 @@ public final class Step1 {
         // Run work in a background thread
         executor.execute(() -> {
 
+            try {
+                final String filePath = context.getFileStreamPath(filename).getPath();
+                final Pair<Boolean, String> result = voiceCapture.isWavValid(filePath);
+
+                // Call back using the main UI thread
+                mainHandler.post(() -> {
+                    if (result.first) {
+                        onSuccess.call(null);
+                    } else {
+                        onFailure.call(new Exception(result.second));
+                    }
+                });
+            } catch (final Throwable throwable) {
+                // Call back using the main UI thread
+                mainHandler.post(() -> onFailure.call(throwable));
+            }
         });
     }
 }

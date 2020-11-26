@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -17,6 +18,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.bbva.next.securityday.workshop.controller.Step1;
+import com.bbva.next.securityday.workshop.controller.Step2;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
     private static final double MIN_CONFIDENCE_NUMBER = 0.75;
 
     final Step1 step1 = new Step1();
+    final Step2 step2 = new Step2();
 
     Toast toast;
     Button recordAudioButton;
@@ -53,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
         bindViews();
         prepareStep1();
+        prepareStep2();
     }
 
     private void bindViews() {
@@ -121,6 +125,63 @@ public class MainActivity extends AppCompatActivity {
                         error -> showAlert("❌ Error", error.getMessage())));
     }
 
+    private void prepareStep2() {
+
+        checkRegistrationButton.setOnClickListener(v -> {
+            final String email = emailEditText.getText().toString();
+            step2.isRegistered(
+                    email,
+                    ok -> showToast("✅ Email " + email + " está registrado"),
+                    error -> showToast("❌ " + error.getMessage()));
+        });
+
+        registerButton.setOnClickListener(v -> {
+            final String email = emailEditText.getText().toString();
+            step2.registerEmail(
+                    email,
+                    registeredUser -> showToast("✅ Email " + registeredUser.getUserId() + " registrado"),
+                    registerError -> showAlert("❌ Error", registerError.getMessage()));
+        });
+
+        authenticateButton.setOnClickListener(v ->
+
+                doFullStep1(AUTHENTICATE_FILENAME, success -> {
+
+                    showToast("⏳ Autenticando...");
+
+                    step2.authenticate(this, REGISTER_FILENAME, AUTHENTICATE_FILENAME,
+                            result -> {
+
+                                if (result.getConfidenceNumber() >= MIN_CONFIDENCE_NUMBER) {
+                                    showAlert("✅ Autenticado", "Confianza de " + ((int) (result.getConfidenceNumber() * 100)) + "%");
+                                } else {
+                                    showAlert("⚠️ No autenticado", "Confianza de " + ((int) (result.getConfidenceNumber() * 100)) + "%");
+                                }
+
+                            }, error -> {
+                                error.printStackTrace();
+                                showAlert("❌ Error", error.getMessage());
+                            });
+                }, error -> {
+                    error.printStackTrace();
+                    showAlert("❌ Error", error.getMessage());
+                }));
+
+        unregisterButton.setOnClickListener(v -> {
+
+            final String email = emailEditText.getText().toString();
+
+            step2.unregisterEmail(email,
+                    ok -> showToast("✅ Email " + email + " eliminado"),
+                    error -> showAlert("❌ Error", error.getMessage()));
+        });
+    }
+
+    private void doFullStep1(final String filename, final Callable<Void> onSuccess, final Callable<Throwable> onFailure) {
+        showToast("⏺ Grabando!");
+        // TODO: Llamar a recordAudio, después a saveAudio, y después a validateAudio
+        Log.d("MainActivity", "⚠️ TODO: Llamar a recordAudio, después a saveAudio, y después a validateAudio");
+    }
 
     private boolean missingRequiredPermissions() {
 
