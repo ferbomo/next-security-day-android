@@ -1,11 +1,9 @@
 package com.bbva.next.securityday.workshop;
 
 import android.Manifest;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -16,10 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.bbva.next.securityday.workshop.controller.LoginViewModel;
 import com.bbva.next.securityday.workshop.controller.Step1;
-import com.bbva.next.securityday.workshop.controller.Step2;
-import com.bbva.next.securityday.workshop.controller.Step3;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,9 +27,6 @@ public class MainActivity extends AppCompatActivity {
     private static final double MIN_CONFIDENCE_NUMBER = 0.75;
 
     final Step1 step1 = new Step1();
-    final Step2 step2 = new Step2();
-    final Step3 step3 = new Step3();
-    final LoginViewModel viewModel = new LoginViewModel(this);
 
     Toast toast;
     Button recordAudioButton;
@@ -59,9 +51,6 @@ public class MainActivity extends AppCompatActivity {
 
         bindViews();
         prepareStep1();
-        prepareStep2();
-        prepareStep3();
-        prepareLogin();
     }
 
     private void bindViews() {
@@ -128,137 +117,6 @@ public class MainActivity extends AppCompatActivity {
                         filename,
                         ok -> showToast("✅ Archivo " + filename + " validado"),
                         error -> showAlert("❌ Error", error.getMessage())));
-    }
-
-    private void prepareStep2() {
-
-        checkRegistrationButton.setOnClickListener(v -> {
-            final String email = emailEditText.getText().toString();
-            step2.isRegistered(
-                    email,
-                    ok -> showToast("✅ Email " + email + " está registrado"),
-                    error -> showToast("❌ " + error.getMessage()));
-        });
-
-        registerButton.setOnClickListener(v -> {
-            final String email = emailEditText.getText().toString();
-            step2.registerEmail(
-                    email,
-                    registeredUser -> showToast("✅ Email " + registeredUser.getUserId() + " registrado"),
-                    registerError -> showAlert("❌ Error", registerError.getMessage()));
-        });
-
-        authenticateButton.setOnClickListener(v ->
-
-                doFullStep1(AUTHENTICATE_FILENAME, success -> {
-
-                    showToast("⏳ Autenticando...");
-
-                    step2.authenticate(this, REGISTER_FILENAME, AUTHENTICATE_FILENAME,
-                            result -> {
-
-                                if (result.getConfidenceNumber() >= MIN_CONFIDENCE_NUMBER) {
-                                    showAlert("✅ Autenticado", "Confianza de " + ((int) (result.getConfidenceNumber() * 100)) + "%");
-                                } else {
-                                    showAlert("⚠️ No autenticado", "Confianza de " + ((int) (result.getConfidenceNumber() * 100)) + "%");
-                                }
-
-                            }, error -> {
-                                error.printStackTrace();
-                                showAlert("❌ Error", error.getMessage());
-                            });
-                }, error -> {
-                    error.printStackTrace();
-                    showAlert("❌ Error", error.getMessage());
-                }));
-
-        unregisterButton.setOnClickListener(v -> {
-
-            final String email = emailEditText.getText().toString();
-
-            step2.unregisterEmail(email,
-                    ok -> showToast("✅ Email " + email + " eliminado"),
-                    error -> showAlert("❌ Error", error.getMessage()));
-        });
-    }
-
-    private void prepareStep3() {
-
-        launchGalaButton.setOnClickListener(v -> step3.openGala(this));
-    }
-
-    private void doFullStep1(final String filename, final Callable<Void> onSuccess, final Callable<Throwable> onFailure) {
-        showToast("⏺ Grabando!");
-        step1.recordAudio(this,
-                secondsLeft -> showToast("⏳ " + secondsLeft + " segundos..."),
-                bytesRecorded -> step1.saveAudio(this, bytesRecorded, filename,
-                        saveOk -> step1.validateAudio(this, filename,
-                                validateOk -> onSuccess.call(null),
-                                onFailure),
-                        onFailure),
-                onFailure);
-    }
-
-    private void prepareLogin() {
-
-        loginButton.setOnClickListener(v -> {
-
-            if (missingRequiredPermissions()) {
-                return;
-            }
-
-            final AlertDialog dialog = new AlertDialog.Builder(this)
-                    .setTitle("Autenticando")
-                    .setMessage("Por favor, espere")
-                    .setCancelable(false)
-                    .setNegativeButton("Cerrar", (di, i) -> {
-                        di.cancel();
-                    })
-                    .create();
-
-            dialog.show();
-            dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setVisibility(View.GONE);
-
-            viewModel.login(loginEditText.getText().toString(),
-                    event -> {
-                switch (event) {
-                    case REGISTRATION:
-                        dialog.setTitle("⏳ Grabando audio del registro");
-                        break;
-                    case AUTHENTICATION:
-                        dialog.setTitle("⏳ Grabando audio de la autenticación");
-                        break;
-                    case AUTHENTICATING:
-                        dialog.setTitle("⏳ Autenticando...");
-                        dialog.setMessage("Por favor, espere");
-                        break;
-                }
-                    },
-                    secondsLeft -> dialog.setMessage("Siga hablando hasta que el contador llegue a cero\n\nQuedan " + secondsLeft + "s"),
-                    success -> {
-                        dialog.setTitle("✅ Autenticado");
-                        dialog.setMessage("Ya puedes usar tu asistente virtual favorito!");
-                        dialog.setCancelable(true);
-                        dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setVisibility(View.VISIBLE);
-                    },
-                    error -> {
-                        dialog.setTitle("❌ Error");
-                        dialog.setMessage(error.getMessage());
-                        dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setVisibility(View.GONE);
-                        dialog.setCancelable(true);
-                    });
-        });
-
-        logoutButton.setOnClickListener(v -> {
-
-            viewModel.logout(loginEditText.getText().toString(),
-                    success -> {
-                        showAlert("✅", "Se ha cerrado la sesión");
-                    },
-                    error -> {
-                        showAlert("❌ Error", error.getMessage());
-                    });
-        });
     }
 
     private boolean missingRequiredPermissions() {
